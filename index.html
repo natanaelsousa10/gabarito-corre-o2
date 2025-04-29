@@ -7,27 +7,74 @@
     body { font-family: sans-serif; text-align: center; padding: 20px; }
     canvas, video { border: 1px solid #000; margin-top: 10px; }
     #resultado { margin-top: 20px; font-size: 18px; }
+    .botoes { margin-top: 10px; }
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      margin: 5px;
+      border: none;
+      background-color: #007BFF;
+      color: white;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
   <h2>Leitor de Gabarito via Câmera</h2>
   <video id="video" width="320" height="240" autoplay></video><br>
-  <button onclick="capturarImagem()">📷 Capturar</button>
+
+  <div class="botoes">
+    <button onclick="capturarImagem()">📷 Capturar</button>
+    <button onclick="alternarCamera()">🔄 Trocar Câmera</button>
+  </div>
+
   <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
   <div id="resultado">Resultado aparecerá aqui.</div>
 
   <script>
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
-  .then(stream => video.srcObject = stream)
-  .catch(err => {
-    console.error(err);
-    alert('Erro ao acessar a câmera traseira. Tentando usar qualquer câmera disponível...');
-    // Tenta qualquer câmera disponível se a traseira não estiver acessível
-    return navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => video.srcObject = stream)
-      .catch(err => alert('Erro geral ao acessar a câmera: ' + err));
-  });
+    let usandoCameraFrontal = false;
+    let streamAtual = null;
 
+    const video = document.getElementById('video');
+
+    function iniciarCamera() {
+      const modo = usandoCameraFrontal ? 'user' : 'environment';
+      const constraints = {
+        video: { facingMode: { exact: modo } }
+      };
+
+      if (streamAtual) {
+        streamAtual.getTracks().forEach(track => track.stop());
+      }
+
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(stream => {
+          streamAtual = stream;
+          video.srcObject = stream;
+        })
+        .catch(err => {
+          console.warn('Erro ao acessar a câmera:', err);
+          // Tenta qualquer câmera disponível como fallback
+          navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+              streamAtual = stream;
+              video.srcObject = stream;
+            })
+            .catch(err => alert('Erro geral ao acessar a câmera: ' + err));
+        });
+    }
+
+    function alternarCamera() {
+      usandoCameraFrontal = !usandoCameraFrontal;
+      iniciarCamera();
+    }
+
+    iniciarCamera(); // Inicia automaticamente
+
+    // Leitura do gabarito (sem alteração)
     const bolinhas = [
       {x: 50, y: 50},  {x: 100, y: 50},  {x: 150, y: 50},  {x: 200, y: 50},  {x: 250, y: 50},
       {x: 50, y: 80},  {x: 100, y: 80},  {x: 150, y: 80},  {x: 200, y: 80},  {x: 250, y: 80},
