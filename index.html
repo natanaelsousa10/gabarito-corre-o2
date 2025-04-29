@@ -17,10 +17,16 @@
   <div id="resultado">Resultado aparecerá aqui.</div>
 
   <script>
-    const video = document.getElementById('video');
-    navigator.mediaDevices.getUserMedia({ video: true })
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+  .then(stream => video.srcObject = stream)
+  .catch(err => {
+    console.error(err);
+    alert('Erro ao acessar a câmera traseira. Tentando usar qualquer câmera disponível...');
+    // Tenta qualquer câmera disponível se a traseira não estiver acessível
+    return navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => video.srcObject = stream)
-      .catch(err => alert('Erro ao acessar a câmera: ' + err));
+      .catch(err => alert('Erro geral ao acessar a câmera: ' + err));
+  });
 
     const bolinhas = [
       {x: 50, y: 50},  {x: 100, y: 50},  {x: 150, y: 50},  {x: 200, y: 50},  {x: 250, y: 50},
