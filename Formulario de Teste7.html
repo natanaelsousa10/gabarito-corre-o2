@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Leitor de Gabarito</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; }
+    canvas, video { border: 1px solid #000; margin-top: 10px; }
+    #resultado { margin-top: 20px; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h2>Leitor de Gabarito via Câmera</h2>
+  <video id="video" width="320" height="240" autoplay></video><br>
+  <button onclick="capturarImagem()">📷 Capturar</button>
+  <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+  <div id="resultado">Resultado aparecerá aqui.</div>
+
+  <script>
+    const video = document.getElementById('video');
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => video.srcObject = stream)
+      .catch(err => alert('Erro ao acessar a câmera: ' + err));
+
+    const bolinhas = [
+      {x: 50, y: 50},  {x: 100, y: 50},  {x: 150, y: 50},  {x: 200, y: 50},  {x: 250, y: 50},
+      {x: 50, y: 80},  {x: 100, y: 80},  {x: 150, y: 80},  {x: 200, y: 80},  {x: 250, y: 80},
+      {x: 50, y: 110}, {x: 100, y: 110}, {x: 150, y: 110}, {x: 200, y: 110}, {x: 250, y: 110},
+      {x: 50, y: 140}, {x: 100, y: 140}, {x: 150, y: 140}, {x: 200, y: 140}, {x: 250, y: 140},
+      {x: 50, y: 170}, {x: 100, y: 170}, {x: 150, y: 170}, {x: 200, y: 170}, {x: 250, y: 170}
+    ];
+
+    const gabaritoCorreto = ['B', 'A', 'D', 'C', 'E'];
+
+    function capturarImagem() {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      let respostas = [];
+      for (let q = 0; q < 5; q++) {
+        let marcada = null;
+        for (let a = 0; a < 5; a++) {
+          let {x, y} = bolinhas[q * 5 + a];
+          let dados = ctx.getImageData(x, y, 5, 5).data;
+
+          let total = 0;
+          for (let i = 0; i < dados.length; i += 4) {
+            let r = dados[i], g = dados[i+1], b = dados[i+2];
+            total += (r + g + b) / 3;
+          }
+
+          let media = total / (dados.length / 4);
+          if (media < 100) marcada = "ABCDE"[a];
+        }
+        respostas.push(marcada || '?');
+      }
+
+      let acertos = 0;
+      let totalQuestoes = gabaritoCorreto.length;
+      let correcoes = respostas.map((r, i) => {
+        if (r === gabaritoCorreto[i]) { acertos++; return `Q${i+1}: ✅ (${r})`; }
+        else return `Q${i+1}: ❌ (${r || 'sem resposta'}) - certo: ${gabaritoCorreto[i]}`;
+      });
+
+      let porcentagem = ((acertos / totalQuestoes) * 100).toFixed(2);
+
+      document.getElementById('resultado').innerHTML =
+        `<p><strong>Você acertou ${acertos} de ${totalQuestoes} (${porcentagem}%)</strong></p><p>${correcoes.join('<br>')}</p>`;
+    }
+  </script>
+</body>
+</html>
